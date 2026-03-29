@@ -37,13 +37,13 @@ COPY packages/shared/package.json packages/shared/
 
 RUN pnpm install --frozen-lockfile --prod
 
-# Copy built output + prisma schema
+# Copy built output + prisma
 COPY --from=builder /app/apps/api/dist apps/api/dist
 COPY --from=builder /app/apps/api/prisma apps/api/prisma
 COPY --from=builder /app/packages/shared packages/shared
 
-# Generate Prisma client in production image
-RUN cd apps/api && npx prisma generate
+# Copy generated Prisma client from builder
+COPY --from=builder /app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/.prisma node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/.prisma
 
 EXPOSE 3000
 
