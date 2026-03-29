@@ -1,6 +1,7 @@
 # ── Stage 1: Build ──
 FROM node:20-alpine AS builder
 
+RUN apk add --no-cache openssl openssl-dev
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
 WORKDIR /app
@@ -27,6 +28,8 @@ RUN pnpm --filter api build
 # ── Stage 2: Production ──
 FROM node:20-alpine AS production
 
+# OpenSSL required for Prisma
+RUN apk add --no-cache openssl
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
 WORKDIR /app
@@ -45,12 +48,12 @@ COPY --from=builder /app/packages/shared packages/shared
 # Copy generated Prisma client from builder
 COPY --from=builder /app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/.prisma node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/.prisma
 
+# Install prisma CLI for migrations (pinned version)
+RUN npm install -g prisma@5.22.0
+
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://localhost:3000/api || exit 1
-
-# Install prisma CLI for migrations (pinned version)
-RUN npm install -g prisma@5.22.0
 
 CMD ["sh", "-c", "cd apps/api && prisma migrate deploy && node dist/main.js"]
