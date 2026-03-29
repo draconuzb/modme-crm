@@ -50,4 +50,7 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://localhost:3000/api || exit 1
 
-CMD ["sh", "-c", "cd apps/api && npx prisma@5.22.0 migrate deploy && node dist/main.js"]
+# Install prisma CLI for migrations (pinned version)
+RUN npm install -g prisma@5.22.0
+
+CMD ["sh", "-c", "cd apps/api && prisma migrate deploy && node dist/main.js"]
