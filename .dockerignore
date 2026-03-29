@@ -1,5 +1,5 @@
 node_modules
-dist
+apps/api/dist
 .turbo
 .git
 .github

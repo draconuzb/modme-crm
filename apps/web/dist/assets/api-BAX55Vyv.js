@@ -1,0 +1,1 @@
+import{d as a}from"./index-LMCJxsAk.js";const o=t=>a.get("/reports/conversion",{params:t}).then(e=>e.data),n=t=>a.get("/attendance/report",{params:t}).then(e=>e.data),r=t=>a.get("/leads",{params:t}).then(e=>e.data),d=t=>a.get("/reports/students-left",{params:t}).then(e=>e.data),g=t=>a.get("/reports/logs",{params:t}).then(e=>e.data);export{n as a,r as b,d as c,g as d,o as g};

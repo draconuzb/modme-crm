@@ -1,0 +1,1 @@
+import{d as t}from"./index-LMCJxsAk.js";const h=e=>t.get("/teachers",{params:e}).then(a=>a.data),o=e=>t.get(`/teachers/${e}`).then(a=>a.data),n=e=>t.post("/teachers",e).then(a=>a.data),g=e=>t.get(`/teachers/${e}/history`).then(a=>a.data),d=(e,a,s)=>t.get(`/teachers/${e}/salary`,{params:{month:a,year:s}}).then(r=>r.data);export{o as a,g as b,n as c,d,h as g};

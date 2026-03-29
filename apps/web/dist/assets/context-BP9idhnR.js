@@ -1,0 +1,1 @@
+import{r as t,an as u}from"./index-LMCJxsAk.js";function s(){}const c=t.createContext({add:s,remove:s});function l(r){const o=t.useContext(c),a=t.useRef(null);return u(e=>{if(e){const n=r?e.querySelector(r):e;n&&(o.add(n),a.current=n)}else o.remove(a.current)})}export{l as u};

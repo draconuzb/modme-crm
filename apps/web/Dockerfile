@@ -1,37 +1,8 @@
-# ── Stage 1: Build ──
-FROM node:20-alpine AS builder
-
-RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
-
-WORKDIR /app
-
-# Copy workspace root
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
-
-# Copy package manifests
-COPY apps/web/package.json apps/web/
-COPY packages/shared/package.json packages/shared/
-
-# Install deps
-RUN pnpm install --frozen-lockfile
-
-# Copy source
-COPY packages/shared/ packages/shared/
-COPY apps/web/ apps/web/
-
-# Build args for Vite env
-ARG VITE_API_URL=/api
-
-# Build shared + web (limit memory for small servers)
-RUN pnpm --filter @modme/shared build 2>/dev/null || true
-ENV NODE_OPTIONS="--max-old-space-size=512"
-RUN cd apps/web && npx vite build
-
-# ── Stage 2: Serve with Nginx ──
+# Pre-built static files — just serve with Nginx
 FROM nginx:alpine AS production
 
-# Copy built static files
-COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
+# Copy pre-built dist (run `pnpm --filter web build` locally before docker build)
+COPY apps/web/dist /usr/share/nginx/html
 
 # Copy nginx config
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
