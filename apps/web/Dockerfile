@@ -22,9 +22,9 @@ COPY apps/web/ apps/web/
 # Build args for Vite env
 ARG VITE_API_URL=/api
 
-# Build shared + web
+# Build shared + web (skip tsc to save memory on small servers)
 RUN pnpm --filter @modme/shared build 2>/dev/null || true
-RUN pnpm --filter web build
+RUN cd apps/web && npx vite build
 
 # ── Stage 2: Serve with Nginx ──
 FROM nginx:alpine AS production
