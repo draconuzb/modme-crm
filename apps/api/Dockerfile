@@ -19,10 +19,8 @@ RUN pnpm install --frozen-lockfile
 COPY packages/shared/ packages/shared/
 COPY apps/api/ apps/api/
 
-# Generate Prisma client
-RUN pnpm --filter api prisma generate
-
-# Build shared + api
+# Generate Prisma client + Build
+RUN cd apps/api && npx prisma generate
 RUN pnpm --filter @modme/shared build 2>/dev/null || true
 RUN pnpm --filter api build
 
@@ -39,15 +37,13 @@ COPY packages/shared/package.json packages/shared/
 
 RUN pnpm install --frozen-lockfile --prod
 
-# Copy built output
+# Copy built output + prisma schema
 COPY --from=builder /app/apps/api/dist apps/api/dist
 COPY --from=builder /app/apps/api/prisma apps/api/prisma
-COPY --from=builder /app/apps/api/node_modules/.prisma apps/api/node_modules/.prisma
-COPY --from=builder /app/node_modules/.pnpm/*prisma*/ node_modules/.pnpm/ 2>/dev/null || true
-COPY --from=builder /app/node_modules/.prisma node_modules/.prisma
-
-# Copy packages
 COPY --from=builder /app/packages/shared packages/shared
+
+# Generate Prisma client in production image
+RUN cd apps/api && npx prisma generate
 
 EXPOSE 3000
 
