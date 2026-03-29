@@ -324,11 +324,10 @@ export class GroupService {
     });
 
     // Get unique dates
-    const dates: string[] = Array.from(
-      new Set(
-        attendanceRecords.map((a) => a.date.toISOString().split('T')[0]),
-      ),
-    ).sort();
+    const dateSet = new Set<string>(
+      attendanceRecords.map((a) => a.date.toISOString().split('T')[0]),
+    );
+    const dates = [...dateSet].sort();
 
     // Build matrix
     const students = enrollments.map((e) => {
