@@ -1,5 +1,4 @@
 node_modules/
-apps/api/dist/
 packages/*/dist/
 .turbo/
 .env
