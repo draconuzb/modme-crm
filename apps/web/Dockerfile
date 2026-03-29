@@ -22,8 +22,9 @@ COPY apps/web/ apps/web/
 # Build args for Vite env
 ARG VITE_API_URL=/api
 
-# Build shared + web (skip tsc to save memory on small servers)
+# Build shared + web (limit memory for small servers)
 RUN pnpm --filter @modme/shared build 2>/dev/null || true
+ENV NODE_OPTIONS="--max-old-space-size=512"
 RUN cd apps/web && npx vite build
 
 # ── Stage 2: Serve with Nginx ──
