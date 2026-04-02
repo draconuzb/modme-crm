@@ -15,7 +15,7 @@ import { GroupService } from './group.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { AddStudentToGroupDto } from './dto/add-student-to-group.dto';
-import { PaginationDto } from '../../common/dto/pagination.dto';
+import { QueryGroupDto } from './dto/query-group.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentBranch } from '../../common/decorators/current-branch.decorator';
 
@@ -31,13 +31,7 @@ export class GroupController {
   @ApiOperation({ summary: 'List groups for current branch' })
   findAll(
     @CurrentBranch() branchId: number,
-    @Query() query: PaginationDto & {
-      courseId?: string;
-      teacherId?: string;
-      dayType?: string;
-      status?: string;
-      tagIds?: string;
-    },
+    @Query() query: QueryGroupDto,
   ) {
     return this.groupService.findAll(branchId, query);
   }

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { PaginationDto } from '../../common/dto/pagination.dto';
+import { QueryGroupDto } from './dto/query-group.dto';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { AddStudentToGroupDto } from './dto/add-student-to-group.dto';
@@ -9,16 +9,7 @@ import { AddStudentToGroupDto } from './dto/add-student-to-group.dto';
 export class GroupService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(
-    branchId: number,
-    query: PaginationDto & {
-      courseId?: string;
-      teacherId?: string;
-      dayType?: string;
-      status?: string;
-      tagIds?: string;
-    },
-  ) {
+  async findAll(branchId: number, query: QueryGroupDto) {
     const {
       page = 1,
       limit = 20,
@@ -42,11 +33,11 @@ export class GroupService {
     }
 
     if (courseId) {
-      where.courseId = parseInt(courseId, 10);
+      where.courseId = courseId;
     }
 
     if (teacherId) {
-      where.teacherId = parseInt(teacherId, 10);
+      where.teacherId = teacherId;
     }
 
     if (dayType) {
