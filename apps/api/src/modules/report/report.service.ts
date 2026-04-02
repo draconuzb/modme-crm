@@ -235,15 +235,102 @@ export class ReportService {
     };
   }
 
-  async getConversion() {
-    return { message: 'Use GET /reports/conversion with query params' };
+  async getAttendance(
+    branchId: number,
+    startDate?: string,
+    endDate?: string,
+    groupId?: number,
+  ) {
+    const now = new Date();
+    const start = startDate
+      ? new Date(startDate)
+      : new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = endDate
+      ? new Date(endDate)
+      : new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    const where: any = {
+      date: { gte: start, lte: end },
+      group: { branchId },
+    };
+    if (groupId) where.groupId = groupId;
+
+    const records = await this.prisma.attendance.findMany({ where });
+
+    const total = records.length;
+    const present = records.filter((r) => r.status === 'PRESENT').length;
+    const late = records.filter((r) => r.status === 'LATE').length;
+    const absent = records.filter((r) => r.status === 'ABSENT').length;
+
+    // Daily breakdown
+    const byDate: Record<string, { present: number; late: number; absent: number; total: number }> = {};
+    for (const r of records) {
+      const d = r.date.toISOString().split('T')[0];
+      if (!byDate[d]) byDate[d] = { present: 0, late: 0, absent: 0, total: 0 };
+      byDate[d].total++;
+      if (r.status === 'PRESENT') byDate[d].present++;
+      else if (r.status === 'LATE') byDate[d].late++;
+      else if (r.status === 'ABSENT') byDate[d].absent++;
+    }
+
+    return {
+      summary: {
+        total,
+        present,
+        late,
+        absent,
+        attendanceRate: total ? Math.round(((present + late) / total) * 100) : 0,
+      },
+      daily: Object.entries(byDate)
+        .map(([date, stats]) => ({ date, ...stats }))
+        .sort((a, b) => a.date.localeCompare(b.date)),
+    };
   }
 
-  async getAttendance() {
-    return { message: 'TODO: implement getAttendance report' };
-  }
+  async getLeads(
+    branchId: number,
+    startDate?: string,
+    endDate?: string,
+    source?: string,
+  ) {
+    const where: any = { branchId };
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) where.createdAt.lte = new Date(endDate);
+    }
+    if (source) where.source = source;
 
-  async getLeads() {
-    return { message: 'TODO: implement getLeads report' };
+    const leads = await this.prisma.lead.findMany({
+      where,
+      select: { id: true, status: true, source: true, createdAt: true, courseId: true, course: { select: { name: true } } },
+    });
+
+    // By status
+    const byStatus: Record<string, number> = {};
+    for (const l of leads) {
+      byStatus[l.status] = (byStatus[l.status] || 0) + 1;
+    }
+
+    // By source
+    const bySource: Record<string, number> = {};
+    for (const l of leads) {
+      const s = l.source || 'Unknown';
+      bySource[s] = (bySource[s] || 0) + 1;
+    }
+
+    // By course
+    const byCourse: Record<string, number> = {};
+    for (const l of leads) {
+      const c = l.course?.name || 'Unknown';
+      byCourse[c] = (byCourse[c] || 0) + 1;
+    }
+
+    return {
+      total: leads.length,
+      byStatus,
+      bySource,
+      byCourse,
+    };
   }
 }

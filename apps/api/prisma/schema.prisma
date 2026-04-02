@@ -35,6 +35,7 @@ model Branch {
   blogPosts    BlogPost[]
   products     Product[]
   orders       Order[]
+  configs      BranchConfig[]
 }
 
 // AUTH & USERS
@@ -588,6 +589,17 @@ model BlogPost {
   isPublished Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// BRANCH CONFIG (key-value settings per branch)
+model BranchConfig {
+  id       Int    @id @default(autoincrement())
+  branchId Int
+  branch   Branch @relation(fields: [branchId], references: [id])
+  key      String
+  value    Json
+
+  @@unique([branchId, key])
 }
 
 // AUDIT LOG

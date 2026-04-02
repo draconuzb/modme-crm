@@ -23,6 +23,13 @@ export class HolidayService {
     });
   }
 
+  async update(id: number, dto: Partial<CreateHolidayDto>) {
+    const data: any = {};
+    if (dto.name !== undefined) data.name = dto.name;
+    if (dto.date !== undefined) data.date = new Date(dto.date);
+    return this.prisma.holiday.update({ where: { id }, data });
+  }
+
   async delete(id: number) {
     return this.prisma.holiday.delete({ where: { id } });
   }

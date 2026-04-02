@@ -1,27 +1,43 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
+const DEFAULT_GRADE_SETTINGS = {
+  maxScore: 100,
+  passingScore: 60,
+  labels: [
+    { label: 'A', min: 90, max: 100 },
+    { label: 'B', min: 75, max: 89 },
+    { label: 'C', min: 60, max: 74 },
+    { label: 'D', min: 40, max: 59 },
+    { label: 'F', min: 0, max: 39 },
+  ],
+};
+
 @Injectable()
 export class GradeService {
   constructor(private prisma: PrismaService) {}
 
   async getSettings(branchId: number) {
-    return {
-      maxScore: 100,
-      passingScore: 60,
-      labels: [
-        { label: 'A', min: 90, max: 100 },
-        { label: 'B', min: 75, max: 89 },
-        { label: 'C', min: 60, max: 74 },
-        { label: 'D', min: 40, max: 59 },
-        { label: 'F', min: 0, max: 39 },
-      ],
-    };
+    const config = await this.prisma.branchConfig.findUnique({
+      where: { branchId_key: { branchId, key: 'grade_settings' } },
+    });
+    return config ? config.value : DEFAULT_GRADE_SETTINGS;
   }
 
   async updateSettings(branchId: number, dto: any) {
-    // Placeholder — in production, persist to branch config or a settings table
-    return { success: true, ...dto };
+    const value = {
+      maxScore: dto.maxScore ?? DEFAULT_GRADE_SETTINGS.maxScore,
+      passingScore: dto.passingScore ?? DEFAULT_GRADE_SETTINGS.passingScore,
+      labels: dto.labels ?? DEFAULT_GRADE_SETTINGS.labels,
+    };
+
+    await this.prisma.branchConfig.upsert({
+      where: { branchId_key: { branchId, key: 'grade_settings' } },
+      create: { branchId, key: 'grade_settings', value },
+      update: { value },
+    });
+
+    return value;
   }
 
   async getGrades(groupId: number, month: number, year: number) {

@@ -1,42 +1,50 @@
 import { Controller, Get, Patch, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiHeader, ApiOperation } from '@nestjs/swagger';
 import { SettingsService } from './settings.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { CurrentBranch } from '../../common/decorators/current-branch.decorator';
 
 @ApiTags('Settings')
 @ApiBearerAuth()
+@ApiHeader({ name: 'x-branch-id', required: false })
 @Controller('settings')
 @UseGuards(JwtAuthGuard)
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 
   @Get('general')
-  getGeneral() {
-    return this.settingsService.getGeneral();
+  @ApiOperation({ summary: 'Get general branch settings' })
+  getGeneral(@CurrentBranch() branchId: number) {
+    return this.settingsService.getGeneral(branchId);
   }
 
   @Patch('general')
-  updateGeneral(@Body() body: any) {
-    return this.settingsService.updateGeneral(body);
+  @ApiOperation({ summary: 'Update general branch settings' })
+  updateGeneral(@CurrentBranch() branchId: number, @Body() body: any) {
+    return this.settingsService.updateGeneral(branchId, body);
   }
 
   @Get('sms')
-  getSms() {
-    return this.settingsService.getSms();
+  @ApiOperation({ summary: 'Get SMS settings' })
+  getSms(@CurrentBranch() branchId: number) {
+    return this.settingsService.getSms(branchId);
   }
 
   @Patch('sms')
-  updateSms(@Body() body: any) {
-    return this.settingsService.updateSms(body);
+  @ApiOperation({ summary: 'Update SMS settings' })
+  updateSms(@CurrentBranch() branchId: number, @Body() body: any) {
+    return this.settingsService.updateSms(branchId, body);
   }
 
   @Get('voip')
-  getVoip() {
-    return this.settingsService.getVoip();
+  @ApiOperation({ summary: 'Get VoIP settings' })
+  getVoip(@CurrentBranch() branchId: number) {
+    return this.settingsService.getVoip(branchId);
   }
 
   @Patch('voip')
-  updateVoip(@Body() body: any) {
-    return this.settingsService.updateVoip(body);
+  @ApiOperation({ summary: 'Update VoIP settings' })
+  updateVoip(@CurrentBranch() branchId: number, @Body() body: any) {
+    return this.settingsService.updateVoip(branchId, body);
   }
 }

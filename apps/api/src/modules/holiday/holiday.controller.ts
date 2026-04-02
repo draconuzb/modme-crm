@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Param,
   Body,
@@ -30,6 +31,11 @@ export class HolidayController {
   @Post()
   create(@CurrentBranch() branchId: number, @Body() dto: CreateHolidayDto) {
     return this.holidayService.create(branchId, dto);
+  }
+
+  @Patch(':id')
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: CreateHolidayDto) {
+    return this.holidayService.update(id, dto);
   }
 
   @Delete(':id')

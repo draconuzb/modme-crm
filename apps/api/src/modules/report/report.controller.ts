@@ -66,12 +66,29 @@ export class ReportController {
   }
 
   @Get('attendance')
-  getAttendance() {
-    return this.reportService.getAttendance();
+  @ApiOperation({ summary: 'Attendance analytics report' })
+  getAttendance(
+    @CurrentBranch() branchId: number,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('groupId') groupId?: string,
+  ) {
+    return this.reportService.getAttendance(
+      branchId,
+      startDate,
+      endDate,
+      groupId ? parseInt(groupId, 10) : undefined,
+    );
   }
 
   @Get('leads')
-  getLeads() {
-    return this.reportService.getLeads();
+  @ApiOperation({ summary: 'Leads analytics report' })
+  getLeads(
+    @CurrentBranch() branchId: number,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('source') source?: string,
+  ) {
+    return this.reportService.getLeads(branchId, startDate, endDate, source);
   }
 }
