@@ -15,6 +15,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import dayjs, { Dayjs } from 'dayjs';
 import { getLogs } from '../../features/reports/api';
+import api from '../../lib/axios';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -70,10 +71,10 @@ const LogsTab: React.FC = () => {
     dateTime: item.createdAt
       ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm')
       : item.dateTime ?? '-',
-    staffName: item.staffName ?? item.staff?.name ?? '-',
+    staffName: item.staffName ?? item.userName ?? '-',
     action: item.action ?? '-',
     entity: item.entity ?? item.entityType ?? '-',
-    details: item.details ?? item.description ?? '-',
+    details: typeof item.details === 'object' ? JSON.stringify(item.details) : (item.details ?? '-'),
   }));
 
   const columns: ColumnsType<LogRow> = [
@@ -97,7 +98,7 @@ const LogsTab: React.FC = () => {
       ),
     },
     { title: 'Entity', dataIndex: 'entity', key: 'entity', width: 120 },
-    { title: 'Details', dataIndex: 'details', key: 'details' },
+    { title: 'Details', dataIndex: 'details', key: 'details', ellipsis: true },
   ];
 
   return (
@@ -106,9 +107,7 @@ const LogsTab: React.FC = () => {
         <Space wrap size="middle">
           <RangePicker
             value={dateRange}
-            onChange={(values) =>
-              setDateRange(values as [Dayjs, Dayjs] | null)
-            }
+            onChange={(values) => setDateRange(values as [Dayjs, Dayjs] | null)}
             allowClear
           />
           <Select
@@ -141,48 +140,197 @@ const LogsTab: React.FC = () => {
   );
 };
 
-const PlaceholderTab: React.FC<{ name: string }> = ({ name }) => (
-  <Card>
-    <div style={{ textAlign: 'center', padding: 48 }}>
-      <Text type="secondary" style={{ fontSize: 16 }}>
-        {name} &mdash; Coming Soon
-      </Text>
-    </div>
-  </Card>
-);
+// ─── SMS History Tab ─────────────────────────────────────────────
 
-const LogsPage: React.FC = () => {
-  const { t } = useTranslation();
+const SmsTab: React.FC = () => {
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(null);
 
-  const tabItems = [
-    {
-      key: 'logs',
-      label: 'Logs',
-      children: <LogsTab />,
+  const params: Record<string, string> = {};
+  if (dateRange) {
+    params.startDate = dateRange[0].format('YYYY-MM-DD');
+    params.endDate = dateRange[1].format('YYYY-MM-DD');
+  }
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['sms-history', params],
+    queryFn: async () => {
+      const { data } = await api.get('/sms/history', { params });
+      return data;
     },
+  });
+
+  const rows = (data?.data ?? data ?? []).map((item: any) => ({
+    id: item.id,
+    phone: item.phone ?? '-',
+    message: item.message ?? item.text ?? '-',
+    status: item.status ?? 'sent',
+    createdAt: item.createdAt ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm') : '-',
+    studentName: item.student
+      ? `${item.student.user?.firstName || ''} ${item.student.user?.lastName || ''}`.trim()
+      : '-',
+  }));
+
+  const columns: ColumnsType<any> = [
+    { title: 'Date', dataIndex: 'createdAt', key: 'createdAt', width: 160 },
+    { title: 'Student', dataIndex: 'studentName', key: 'studentName', width: 160 },
+    { title: 'Phone', dataIndex: 'phone', key: 'phone', width: 150 },
+    { title: 'Message', dataIndex: 'message', key: 'message', ellipsis: true },
     {
-      key: 'workly',
-      label: 'Workly Report',
-      children: <PlaceholderTab name="Workly Report" />,
-    },
-    {
-      key: 'sms',
-      label: 'Sent SMS',
-      children: <PlaceholderTab name="Sent SMS" />,
-    },
-    {
-      key: 'calls',
-      label: 'Call Log',
-      children: <PlaceholderTab name="Call Log" />,
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      width: 100,
+      render: (s: string) => <Tag color={s === 'sent' ? 'green' : 'orange'}>{s}</Tag>,
     },
   ];
 
   return (
     <>
-      <Breadcrumb
-        items={[{ title: 'Reports' }, { title: 'Logs' }]}
-        style={{ marginBottom: 16 }}
-      />
+      <Card style={{ marginBottom: 16 }}>
+        <RangePicker
+          value={dateRange}
+          onChange={(values) => setDateRange(values as [Dayjs, Dayjs] | null)}
+          allowClear
+        />
+      </Card>
+      <Table columns={columns} dataSource={rows} loading={isLoading} rowKey="id" pagination={{ pageSize: 20 }} scroll={{ x: 700 }} />
+    </>
+  );
+};
+
+// ─── Call Log Tab ────────────────────────────────────────────────
+
+const CallsTab: React.FC = () => {
+  const [direction, setDirection] = useState<string>('');
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(null);
+
+  const params: Record<string, string> = {};
+  if (direction) params.direction = direction;
+  if (dateRange) {
+    params.startDate = dateRange[0].format('YYYY-MM-DD');
+    params.endDate = dateRange[1].format('YYYY-MM-DD');
+  }
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['call-history', params],
+    queryFn: async () => {
+      const { data } = await api.get('/voip/calls', { params });
+      return data;
+    },
+  });
+
+  const rows = (data?.data ?? data ?? []).map((item: any) => ({
+    id: item.id,
+    phone: item.phone ?? '-',
+    direction: item.direction ?? '-',
+    duration: item.duration ? `${Math.floor(item.duration / 60)}:${String(item.duration % 60).padStart(2, '0')}` : '-',
+    createdAt: item.createdAt ? dayjs(item.createdAt).format('YYYY-MM-DD HH:mm') : '-',
+    studentName: item.student
+      ? `${item.student.user?.firstName || ''} ${item.student.user?.lastName || ''}`.trim()
+      : '-',
+  }));
+
+  const columns: ColumnsType<any> = [
+    { title: 'Date', dataIndex: 'createdAt', key: 'createdAt', width: 160 },
+    { title: 'Student', dataIndex: 'studentName', key: 'studentName', width: 160 },
+    { title: 'Phone', dataIndex: 'phone', key: 'phone', width: 150 },
+    {
+      title: 'Direction',
+      dataIndex: 'direction',
+      key: 'direction',
+      width: 110,
+      render: (d: string) => <Tag color={d === 'incoming' ? 'blue' : 'green'}>{d}</Tag>,
+    },
+    { title: 'Duration', dataIndex: 'duration', key: 'duration', width: 100 },
+  ];
+
+  return (
+    <>
+      <Card style={{ marginBottom: 16 }}>
+        <Space wrap>
+          <RangePicker
+            value={dateRange}
+            onChange={(values) => setDateRange(values as [Dayjs, Dayjs] | null)}
+            allowClear
+          />
+          <Select
+            style={{ width: 150 }}
+            placeholder="Direction"
+            value={direction || undefined}
+            onChange={(val) => setDirection(val ?? '')}
+            allowClear
+            options={[
+              { label: 'All', value: '' },
+              { label: 'Incoming', value: 'incoming' },
+              { label: 'Outgoing', value: 'outgoing' },
+            ]}
+          />
+        </Space>
+      </Card>
+      <Table columns={columns} dataSource={rows} loading={isLoading} rowKey="id" pagination={{ pageSize: 20 }} scroll={{ x: 700 }} />
+    </>
+  );
+};
+
+// ─── Teacher Attendance (Workly) Tab ─────────────────────────────
+
+const WorklyTab: React.FC = () => {
+  const { data, isLoading } = useQuery({
+    queryKey: ['teacher-attendance-log'],
+    queryFn: async () => {
+      const { data } = await api.get('/attendance/teachers');
+      return data;
+    },
+  });
+
+  const rows = (data?.data ?? data ?? []).map((item: any) => ({
+    id: item.id,
+    teacherName: item.teacher
+      ? `${item.teacher.user?.firstName || ''} ${item.teacher.user?.lastName || ''}`.trim()
+      : item.teacherName ?? '-',
+    date: item.date ? dayjs(item.date).format('YYYY-MM-DD') : '-',
+    checkIn: item.checkIn ?? '-',
+    checkOut: item.checkOut ?? '-',
+    status: item.status ?? '-',
+  }));
+
+  const columns: ColumnsType<any> = [
+    { title: 'Date', dataIndex: 'date', key: 'date', width: 120 },
+    { title: 'Teacher', dataIndex: 'teacherName', key: 'teacherName', width: 180 },
+    { title: 'Check In', dataIndex: 'checkIn', key: 'checkIn', width: 100 },
+    { title: 'Check Out', dataIndex: 'checkOut', key: 'checkOut', width: 100 },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      width: 100,
+      render: (s: string) => {
+        const colors: Record<string, string> = { PRESENT: 'green', LATE: 'orange', ABSENT: 'red' };
+        return <Tag color={colors[s] ?? 'default'}>{s}</Tag>;
+      },
+    },
+  ];
+
+  return (
+    <Table columns={columns} dataSource={rows} loading={isLoading} rowKey="id" pagination={{ pageSize: 20 }} scroll={{ x: 600 }} />
+  );
+};
+
+// ─── Main Page ────────────────────────────────────────────────────
+
+const LogsPage: React.FC = () => {
+  const { t } = useTranslation();
+
+  const tabItems = [
+    { key: 'logs', label: 'Logs', children: <LogsTab /> },
+    { key: 'workly', label: 'Workly Report', children: <WorklyTab /> },
+    { key: 'sms', label: 'Sent SMS', children: <SmsTab /> },
+    { key: 'calls', label: 'Call Log', children: <CallsTab /> },
+  ];
+
+  return (
+    <>
+      <Breadcrumb items={[{ title: 'Reports' }, { title: 'Logs' }]} style={{ marginBottom: 16 }} />
       <Title level={2}>{t('pages.logs')}</Title>
       <Tabs defaultActiveKey="logs" items={tabItems} />
     </>
