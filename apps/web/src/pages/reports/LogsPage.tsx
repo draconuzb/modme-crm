@@ -17,7 +17,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import { getLogs } from '../../features/reports/api';
 import api from '../../lib/axios';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 const { RangePicker } = DatePicker;
 
 const ACTION_COLORS: Record<string, string> = {

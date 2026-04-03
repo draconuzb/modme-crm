@@ -19,7 +19,6 @@ import {
 } from 'antd';
 import {
   PlusOutlined,
-  EditOutlined,
   DeleteOutlined,
   ClockCircleOutlined,
 } from '@ant-design/icons';
